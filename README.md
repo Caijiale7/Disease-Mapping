@@ -1,4 +1,4 @@
-Disease Mapping Project
+# Disease Mapping Project
 
 ## Overview
 
