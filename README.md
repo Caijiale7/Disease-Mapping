@@ -139,6 +139,12 @@ The internal disease classification should be used together with ICD-10 mapping 
 
 ### 3. ICD-10 Reference
 
+The project uses China ICD-10 Medical Insurance Version as the standard ICD-10 reference.
+
+Detailed ICD-10 rules are documented in:
+
+`references/ICD10_REFERENCE.md`
+
 ICD-10 is used as a standardized disease ontology.
 
 The mapping process uses ICD-10 as an intermediate reference layer between:
