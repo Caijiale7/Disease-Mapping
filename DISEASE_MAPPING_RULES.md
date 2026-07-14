@@ -145,33 +145,126 @@ Never prioritize:
 
 ---
 
-## Rule 2: Multiple indications
 
-One drug may contain multiple indications.
+## Rule 2: Indication Granularity
 
-Multiple indications are separated by:
+In the current dataset, each pharmaceutical indication description represents one clinical indication.
 
-```text
-;
-```
+Therefore:
 
-Example:
+- Codex should NOT split indication descriptions by default.
+- Each indication description should be treated as one mapping unit.
+- The original indication description should be preserved.
 
-```text
-动脉粥样硬化性心血管疾病；肥胖；超重
-```
+The workflow is:
 
-Codex must split into:
+适应症描述
+
+↓
+
+Disease Entity normalization
+
+↓
+
+ICD-10 mapping
+
+↓
+
+Internal disease classification
+
+
+Only perform splitting when multiple independent diseases are explicitly present and cannot be represented as one disease entity.
+
+Example requiring split:
+
+"动脉粥样硬化性心血管疾病；肥胖"
+
+This contains two independent disease entities:
 
 1. 动脉粥样硬化性心血管疾病
 2. 肥胖
-3. 超重
 
-Each indication must be processed independently.
+
+Example NOT requiring split:
+
+"非家族性高胆固醇血症和混合型高脂血症"
+
+This represents different lipid disorder subtypes under the same clinical indication category.
+
+The indication should be normalized into:
+
+Disease Entity:
+
+高脂血症
+
+
+and mapped as one disease entity.
+
+---
+## Rule 3: Disease Subtype Normalization
+
+Some indication descriptions may contain multiple disease subtypes, phenotypes, or clinical variants.
+
+If these subtypes belong to the same disease entity, Codex should NOT split them into separate indications.
+
+Instead:
+
+1. Identify the common disease entity.
+2. Normalize the indication into one Disease Entity.
+3. Map the unified disease entity to ICD-10.
+4. Preserve the original indication description.
+
+
+Examples:
+
+
+Input:
+
+非家族性高胆固醇血症和混合型高脂血症
+
+
+Correct:
+
+Disease Entity:
+
+高脂血症
+
+
+Mapping:
+
+One ICD-10 mapping
+
+
+Incorrect:
+
+Split into:
+
+- 非家族性高胆固醇血症
+- 混合型高脂血症
+
+
+because these represent subtypes within lipid metabolism disorders.
+
 
 ---
 
-## Rule 3: Single indication mapping
+Additional examples:
+
+
+Input:
+
+轻度至中度心力衰竭
+
+Disease Entity:
+
+心力衰竭
+
+
+Disease severity, molecular subtype, or clinical stage should not create separate disease entities unless they correspond to different ICD-10 categories.
+
+---
+
+## Rule 4: Single indication mapping
 
 The default assumption is:
 
@@ -444,7 +537,7 @@ For every indication after splitting:
 | 主试验药 |
 | 医药魔方适应症 |
 | 原始适应症描述 |
-| Split Indication |
+| Normalized Disease Enity |
 | ICD-10 Code |
 | ICD-10 Disease Name |
 | ICD-10 Category |
