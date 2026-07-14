@@ -93,6 +93,17 @@ Score columns must NOT be used for disease matching.
 
 ---
 
+## File 3: ICD-10 Reference
+
+ICD-10 is used as the standardized disease classification layer between PharmaCube indication descriptions and internal disease taxonomy.
+
+The project primarily uses:
+
+```text
+China ICD-10 Medical Insurance Version (医保版 ICD-10)
+
+---
+
 # Overall Workflow
 
 For every row in the PharmaCube file:
@@ -176,7 +187,20 @@ Special cases must be explicitly reported.
 
 ---
 
+
 # ICD-10 Mapping Rules
+
+The ICD-10 mapping should follow:
+
+```text
+PharmaCube indication description
+          ↓
+Standardized disease entity
+          ↓
+China ICD-10 Medical Insurance classification
+          ↓
+Internal disease classification
+
 
 For every indication:
 
@@ -184,10 +208,15 @@ Codex must return:
 
 | Field |
 |--------|
+| ICD-10 Version |
 | ICD-10 Code |
 | ICD-10 Disease Name |
 | ICD-10 Category |
 | ICD-10 Confidence |
+
+ICD-10 Version should always be:
+
+China ICD-10 Medical Insurance Version
 
 Codex must:
 
@@ -201,22 +230,21 @@ Codex must:
 
 Input:
 
-```text
-适应症描述：
-
 重度高甘油三酯血症
-```
 
 Output:
 
-```text
+ICD-10 Version:
+
+China ICD-10 Medical Insurance Version
+
 ICD-10 Code:
 
 E78.1
 
 ICD-10 Disease:
 
-Hypertriglyceridemia
+高甘油三酯血症
 
 ICD-10 Category:
 
@@ -536,6 +564,8 @@ Codex must NOT:
 - Force mappings.
 - Delete unmapped diseases.
 - Modify original files.
-
+- Use ICD-10 versions other than China ICD-10 Medical Insurance Version unless explicitly requested.
+- Mix different ICD-10 versions within one mapping task.
+- Select ICD-10 codes only based on keyword similarity.
 All unmapped records must be preserved.
 
