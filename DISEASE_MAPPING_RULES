@@ -1,1 +1,541 @@
+# Disease Mapping Rules
+
+## Project Objective
+
+The purpose of this project is to map pharmaceutical indications exported from PharmaCube to:
+
+1. ICD-10 disease classifications.
+2. Internal disease taxonomy.
+
+For every record in the PharmaCube file, Codex must:
+
+- Read the indication description.
+- Identify the disease entity.
+- Map the disease to ICD-10.
+- Match the ICD-10 result to the internal disease classification.
+- Return unmapped diseases.
+- Explain the mapping rationale.
+
+---
+
+# Input Files
+
+## File 1: PharmaCube Export
+
+Main sheet:
+
+```text
+创新药
+```
+
+Important columns:
+
+| Column | Meaning |
+|----------|----------|
+| 登记号 | Unique record ID |
+| 主试验药 | Drug name |
+| 适应症 | PharmaCube summarized indication |
+| 适应症描述 | Detailed indication description |
+| 试验题目 | Trial title |
+
+Important:
+
+The primary field for disease identification is:
+
+```text
+适应症描述
+```
+
+The following columns are supplementary only:
+
+```text
+适应症
+试验题目
+```
+
+Codex must NOT use:
+
+```text
+疾病领域
+```
+
+as the primary source for disease mapping.
+
+---
+
+## File 2: Internal Disease Classification
+
+Main sheet:
+
+```text
+Disease Mapping
+```
+
+Important columns:
+
+| Column | Meaning |
+|----------|----------|
+| B | TA |
+| C | Disease (EN) |
+| D | Disease (CN) |
+
+Examples:
+
+- 心力衰竭
+- 心律失常/房颤
+- 冠心病
+- 高血压
+- 高甘油三酯血症
+- 高胆固醇血症
+- 急性冠脉综合征
+
+Score columns must NOT be used for disease matching.
+
+---
+
+# Overall Workflow
+
+For every row in the PharmaCube file:
+
+```text
+登记号
+      ↓
+主试验药
+      ↓
+适应症描述
+      ↓
+Split indications
+      ↓
+Identify disease entities
+      ↓
+Map to ICD-10
+      ↓
+Match internal Disease(CN)
+      ↓
+Generate output
+```
+
+---
+
+# Disease Identification Rules
+
+## Rule 1: Always prioritize indication description
+
+Priority:
+
+1. 适应症描述
+2. 适应症
+3. 试验题目
+4. 历史备注
+
+Never prioritize:
+
+- 疾病领域
+
+---
+
+## Rule 2: Multiple indications
+
+One drug may contain multiple indications.
+
+Multiple indications are separated by:
+
+```text
+;
+```
+
+Example:
+
+```text
+动脉粥样硬化性心血管疾病；肥胖；超重
+```
+
+Codex must split into:
+
+1. 动脉粥样硬化性心血管疾病
+2. 肥胖
+3. 超重
+
+Each indication must be processed independently.
+
+---
+
+## Rule 3: Single indication mapping
+
+The default assumption is:
+
+```text
+One drug
+    ↓
+One indication
+    ↓
+One disease
+```
+
+Special cases must be explicitly reported.
+
+---
+
+# ICD-10 Mapping Rules
+
+For every indication:
+
+Codex must return:
+
+| Field |
+|--------|
+| ICD-10 Code |
+| ICD-10 Disease Name |
+| ICD-10 Category |
+| ICD-10 Confidence |
+
+Codex must:
+
+- Choose the most specific ICD-10 disease supported by the indication description.
+- Avoid over-interpretation.
+- Keep uncertainty explicit.
+
+---
+
+## Example
+
+Input:
+
+```text
+适应症描述：
+
+重度高甘油三酯血症
+```
+
+Output:
+
+```text
+ICD-10 Code:
+
+E78.1
+
+ICD-10 Disease:
+
+Hypertriglyceridemia
+
+ICD-10 Category:
+
+Disorders of lipoprotein metabolism
+```
+
+---
+
+# Internal Disease Mapping Rules
+
+Internal matching target:
+
+```text
+Disease Mapping
+        ↓
+Disease (CN)
+```
+
+Codex must determine:
+
+1. Can the indication be mapped?
+2. Which disease does it map to?
+3. Why?
+
+---
+
+## Rule 1: Exact matching preferred
+
+Prefer:
+
+- Exact disease names.
+- Accepted medical synonyms.
+- ICD-10-supported mappings.
+
+---
+
+## Rule 2: Do not force mapping
+
+If no disease exists:
+
+Return:
+
+```text
+Can Match = No
+
+Internal Disease = Unmapped
+```
+
+Never force diseases into existing categories.
+
+---
+
+## Rule 3: Multiple disease mappings
+
+One indication may correspond to multiple internal diseases.
+
+Example:
+
+```text
+动脉粥样硬化性心血管疾病
+```
+
+Possible diseases:
+
+- 冠心病
+- 外周动脉疾病
+- 缺血性卒中
+
+Codex must:
+
+- List all possible matches.
+- Explain the rationale.
+- Mark:
+
+```text
+Mapping Type:
+
+Multiple Internal Matches
+```
+
+---
+
+## Rule 4: Cross-TA indications
+
+Some indications do not belong to cardiovascular diseases.
+
+Example:
+
+```text
+肥胖
+超重
+2型糖尿病
+```
+
+Codex must:
+
+- Mark:
+
+```text
+Non-cardiovascular indication
+```
+
+- Exclude them from cardiovascular mapping.
+
+---
+
+## Rule 5: Partial mapping
+
+One drug may contain both cardiovascular and non-cardiovascular indications.
+
+Example:
+
+```text
+动脉粥样硬化性心血管疾病；肥胖；超重
+```
+
+Result:
+
+| Indication | Match |
+|------------|--------|
+| 动脉粥样硬化性心血管疾病 | Yes |
+| 肥胖 | No |
+| 超重 | No |
+
+Return:
+
+```text
+Mapping Status:
+
+Partially Mapped
+```
+
+---
+
+# Mapping Status
+
+Use one of:
+
+```text
+Fully Mapped
+Partially Mapped
+Unmapped
+Multiple Internal Matches
+Manual Review Required
+```
+
+Definitions:
+
+### Fully Mapped
+
+All indications match internal diseases.
+
+### Partially Mapped
+
+Some indications match and some do not.
+
+### Unmapped
+
+No internal disease exists.
+
+### Multiple Internal Matches
+
+One indication corresponds to multiple diseases.
+
+### Manual Review Required
+
+Codex cannot confidently determine the mapping.
+
+---
+
+# Manual Review Rules
+
+Mark:
+
+```text
+Review Required = Yes
+```
+
+if:
+
+- Multiple ICD-10 diseases are possible.
+- Multiple internal diseases are possible.
+- The indication is ambiguous.
+- It is unclear whether the disease belongs to cardiovascular TA.
+
+Codex must never force uncertain mappings.
+
+---
+
+# Required Output
+
+For every indication after splitting:
+
+| Field |
+|--------|
+| 登记号 |
+| 主试验药 |
+| 医药魔方适应症 |
+| 原始适应症描述 |
+| Split Indication |
+| ICD-10 Code |
+| ICD-10 Disease Name |
+| ICD-10 Category |
+| ICD-10 Confidence |
+| Can Match Internal Disease |
+| Internal Disease (CN) |
+| Internal Disease (EN) |
+| Mapping Status |
+| Review Required |
+| Mapping Reason |
+
+---
+
+# Output Examples
+
+## Example 1
+
+Input:
+
+```text
+登记号：
+
+DR10624
+
+主试验药：
+
+DR10624
+
+适应症：
+
+高甘油三酯血症
+
+适应症描述：
+
+重度高甘油三酯血症
+```
+
+Output:
+
+| Field | Value |
+|--------|--------|
+| ICD-10 Code | E78.1 |
+| ICD-10 Disease | Hypertriglyceridemia |
+| Can Match | Yes |
+| Internal Disease | 高甘油三酯血症 |
+| Status | Fully Mapped |
+
+Reason:
+
+```text
+The indication explicitly states severe hypertriglyceridemia and exactly matches the internal disease classification.
+```
+
+---
+
+## Example 2
+
+Input:
+
+```text
+适应症描述：
+
+急性穿支动脉梗死
+```
+
+Output:
+
+| Field | Value |
+|--------|--------|
+| ICD-10 Code | I63 |
+| ICD-10 Disease | Ischemic stroke |
+| Can Match | No |
+| Internal Disease | Unmapped |
+| Status | Unmapped |
+
+Reason:
+
+```text
+The indication can be mapped to ischemic stroke in ICD-10, but there is no corresponding disease in the internal disease table.
+```
+
+---
+
+## Example 3
+
+Input:
+
+```text
+适应症描述：
+
+动脉粥样硬化性心血管疾病；肥胖；超重
+```
+
+Output:
+
+| Split Indication | Match |
+|------------------|--------|
+| 动脉粥样硬化性心血管疾病 | Yes |
+| 肥胖 | No |
+| 超重 | No |
+
+Status:
+
+```text
+Partially Mapped
+```
+
+---
+
+# Restrictions
+
+Codex must NOT:
+
+- Use score columns.
+- Ignore indication descriptions.
+- Use disease area as the primary source.
+- Force mappings.
+- Delete unmapped diseases.
+- Modify original files.
+
+All unmapped records must be preserved.
 
