@@ -1,4 +1,4 @@
-# Disease Mapping Project
+Disease Mapping Project
 
 ## Overview
 
@@ -7,23 +7,38 @@ This repository contains the workflow, instructions, and rules for mapping pharm
 The primary objectives are:
 
 1. Mapping pharmaceutical indication descriptions to ICD-10 disease classifications;
-2. Mapping ICD-10-standardized diseases to internal disease taxonomy;
+2. Mapping ICD-10-standardized disease entities to internal disease taxonomy;
 3. Identifying ambiguous and unmapped records for further review.
 
 The overall workflow is:
 
-```
+```text
 Raw pharmaceutical indication data
-        ↓
-Disease entity extraction
-        ↓
-ICD-10 mapping
-        ↓
-Internal disease classification mapping
-        ↓
-Unmapped record review
-```
 
+        ↓
+
+Indication structure identification
+
+        ↓
+
+Disease entity normalization
+
+        ↓
+
+Disease modifier identification
+
+        ↓
+
+ICD-10 mapping
+
+        ↓
+
+Internal disease classification mapping
+
+        ↓
+
+Mapped and unmapped record review
+```
 ---
 
 ## Project Purpose
@@ -33,10 +48,12 @@ Pharmaceutical databases often contain indication descriptions with inconsistent
 This project aims to standardize pharmaceutical indication information by:
 
 - Identifying the core disease entity from indication descriptions;
-- Separating diseases from treatment-related qualifiers (e.g., disease stage, biomarker status, treatment line);
-- Mapping diseases to ICD-10 classifications;
-- Mapping standardized diseases to internal disease categories;
+- Separating core diseases from disease modifiers (e.g., disease stage, severity, biomarker status, genetic subtype, and clinical phenotype);
+- Mapping standardized disease entities to ICD-10 classifications;
+- Mapping ICD-10-standardized diseases to internal disease categories;
 - Preserving ambiguous and unmapped records for manual review.
+
+The project does not rely only on keyword matching. Clinical interpretation and disease ontology alignment are required during mapping.
 
 ---
 
@@ -54,11 +71,12 @@ Disease-Mapping/
 ├── README.md
 │   └── Project overview and usage guide
 │
+├── references/
+│   └── External reference standards
+│       └── ICD10_REFERENCE.md
+│
 ├── data/
 │   └── Input pharmaceutical and internal disease classification files
-│
-├── references/
-│   └── External references (e.g., ICD-10 source information)
 │
 └── outputs/
     └── Generated mapping results and review files
@@ -74,10 +92,11 @@ Defines repository-level instructions for Codex execution.
 
 This file specifies:
 
-- General execution principles;
 - Required files to read before performing tasks;
+- Execution order;
 - Data handling rules;
-- Output requirements.
+- Output requirements;
+- File management rules.
 
 ---
 
@@ -86,16 +105,39 @@ This file specifies:
 Contains detailed disease mapping methodology and rules.
 
 The document defines:
-
 - Input data interpretation;
-- Disease entity extraction rules;
+- Indication field priority;
+- Disease entity normalization rules;
+- Disease modifier identification rules;
 - ICD-10 mapping logic;
 - Internal disease classification mapping;
-- Confidence scoring;
+- Confidence assessment;
 - Unmapped record handling;
 - Quality control requirements.
 
 Before performing any disease mapping task, Codex should read this file.
+
+---
+
+### references/ICD10_REFERENCE.md
+
+This file defines the ICD-10 reference standard used in this project.
+
+It specifies:
+
+- ICD-10 version;
+- Official reference source;
+- Version control rules;
+- ICD-10 mapping principles.
+
+The project uses:
+- China ICD-10 Medical Insurance Version
+- 中国医疗保障疾病分类与代码（医保版 ICD-10）
+
+as the official ICD-10 reference standard.
+
+The detailed ICD-10 source definition and version control are maintained in:
+`references/ICD10_REFERENCE.md`
 
 ---
 
@@ -133,33 +175,35 @@ Typical fields include:
 - Disease Name (English);
 - Disease Name (Chinese).
 
-The internal disease classification should be used together with ICD-10 mapping results and clinical disease interpretation.
+Internal disease mapping should consider:
+
+- Normalized disease entity;
+- ICD-10 classification;
+- Internal disease taxonomy definition.
 
 ---
 
 ### 3. ICD-10 Reference
 
-The project uses China ICD-10 Medical Insurance Version as the standard ICD-10 reference.
+ICD-10 is used as an intermediate standardized disease layer between pharmaceutical indications and internal disease taxonomy.
 
-Detailed ICD-10 rules are documented in:
+The mapping framework is:
 
-`references/ICD10_REFERENCE.md`
-
-ICD-10 is used as a standardized disease ontology.
-
-The mapping process uses ICD-10 as an intermediate reference layer between:
-
-```
 Raw indication description
-        ↓
-Standardized disease entity
-        ↓
-ICD-10 classification
-        ↓
-Internal disease category
-```
 
-The ICD-10 version and source should be recorded for each mapping project.
+↓
+
+Normalized Disease Entity
+
+↓
+
+China ICD-10 Medical Insurance Classification
+
+↓
+
+Internal Disease Category
+
+The ICD-10 version and reference source should be recorded for each mapping project.
 
 ---
 
@@ -168,14 +212,17 @@ The ICD-10 version and source should be recorded for each mapping project.
 Before executing any disease mapping task:
 
 1. Read `AGENTS.md`;
-2. Read `DISEASE_MAPPING_RULES.md`;
-3. Load pharmaceutical database files;
-4. Load internal disease classification files;
-5. Identify indication-related fields;
-6. Extract disease entities;
-7. Map diseases to ICD-10 classifications;
-8. Map standardized diseases to internal disease categories;
-9. Generate mapped results and unmapped review files.
+2. Read `references/ICD10_REFERENCE.md`;
+3. Read `DISEASE_MAPPING_RULES.md`;
+4. Load pharmaceutical database files;
+5. Load internal disease classification files;
+6. Identify indication-related fields;
+7. Identify indication structure;
+8. Normalize disease entity;
+9. Identify disease modifiers;
+10. Map disease entity to ICD-10 classification;
+11. Map ICD-10 standardized disease to internal disease taxonomy;
+12. Generate mapped results and unmapped review files.
 
 ---
 
@@ -185,11 +232,14 @@ The final output should contain the following components.
 
 ### 1. Mapping Results
 
-The output should include:
+Each mapped record should include:
 
 - Original indication description;
-- Standardized disease entity;
-- ICD-10 code and disease name;
+- Normalized disease entity;
+- Disease modifier;
+- ICD-10 version;
+- ICD-10 code;
+- ICD-10 Disease name;
 - Internal disease classification;
 - Mapping confidence;
 - Mapping rationale.
@@ -218,12 +268,14 @@ The following principles must always be followed:
 
 - Do not modify original input files;
 - Preserve original indication descriptions;
-- Do not force a disease into an unrelated internal category;
-- Do not rely only on keyword matching;
-- Separate core diseases from disease qualifiers;
-- Maintain mapping rationale for each result;
+- Identify core disease entities before mapping;
+- Separate diseases from disease modifiers;
+- Do not split indication descriptions unless multiple independent diseases are explicitly present;
+- Do not force diseases into unrelated internal categories;
+- Do not rely only on keyword similarity;
+- Maintain mapping rationale for every result;
 - Record uncertainty and manual review requirements.
-
+  
 ---
 
 ## Codex Execution Instructions
@@ -231,11 +283,15 @@ The following principles must always be followed:
 For any disease mapping task in this repository:
 
 1. First read `AGENTS.md`;
-2. Follow the rules defined in `DISEASE_MAPPING_RULES.md`;
-3. Use the provided pharmaceutical database and internal disease classification files;
-4. Return both mapped and unmapped results;
-5. Clearly identify records requiring manual review;
-6. Save generated outputs separately from original data files.
+2. Read ICD-10 reference information from `references/ICD10_REFERENCE.md`;
+3. Follow the rules defined in `DISEASE_MAPPING_RULES.md`;
+4. Load the provided pharmaceutical database and internal disease classification files;
+5. Perform disease entity normalization;
+6. Perform ICD-10 mapping using the specified ICD-10 standard;
+7. Perform internal disease classification mapping;
+8. Return both mapped and unmapped results;
+9. Clearly identify records requiring manual review;
+10. Save generated outputs separately from original data files.
 
 ---
 
@@ -250,6 +306,8 @@ Current focus:
 Future extensions may include:
 
 - Additional therapeutic areas;
-- Automated disease synonym dictionaries;
+- Disease synonym dictionaries;
 - Expanded disease ontology mapping;
+- Automated disease synonym dictionaries;
+- Additional clinical classification standards.
 - Validation workflows.
