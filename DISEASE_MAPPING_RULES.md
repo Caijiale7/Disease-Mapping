@@ -119,12 +119,13 @@ Determine indication structure
       ↓
 Normalize Disease Entity
       ↓
+Identify Disease Modifier
+      ↓
 Map to ICD-10
       ↓
 Match internal Disease(CN)
       ↓
 Generate output
-```
 
 ---
 
