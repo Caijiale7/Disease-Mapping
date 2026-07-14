@@ -115,9 +115,9 @@ For every row in the PharmaCube file:
       ↓
 适应症描述
       ↓
-Split indications
+Determine indication structure
       ↓
-Identify disease entities
+Normalize Disease Entity
       ↓
 Map to ICD-10
       ↓
@@ -227,7 +227,7 @@ Correct:
 
 Disease Entity:
 
-高脂血症
+高胆固醇血症
 
 
 Mapping:
@@ -245,6 +245,7 @@ Split into:
 
 because these represent subtypes within lipid metabolism disorders.
 
+The final internal disease mapping should follow the available internal disease taxonomy.
 
 ---
 
@@ -264,19 +265,69 @@ Disease severity, molecular subtype, or clinical stage should not create separat
 
 ---
 
-## Rule 4: Single indication mapping
+## Rule 4: Disease Entity and Disease Modifier
+
+Indication descriptions may contain disease modifiers.
+
+Examples:
+
+- Disease stage
+- Severity
+- Biomarker status
+- Genetic subtype
+- Patient population
+
+
+These modifiers should not create separate disease entities.
+
+
+Examples:
+
+Input:
+
+重度高甘油三酯血症
+
+Disease Entity:
+
+高甘油三酯血症
+
+Modifier:
+
+重度
+
+
+Input:
+
+杂合子型家族性高胆固醇血症
+
+Disease Entity:
+
+高胆固醇血症
+
+Modifier:
+
+杂合子型家族性
+
+---
+
+## Rule 5: Disease Entity Mapping Principle
 
 The default assumption is:
 
-```text
-One drug
-    ↓
-One indication
-    ↓
-One disease
-```
+One indication description
+        ↓
+One primary disease entity
 
-Special cases must be explicitly reported.
+
+However, one indication description may contain:
+
+- Disease subtypes;
+- Disease phenotypes;
+- Clinical variants.
+
+These should be normalized into one disease entity when they represent the same clinical disease category.
+
+Multiple disease entities should only be generated when clearly independent diseases are present.
 
 ---
 
@@ -405,6 +456,10 @@ Possible diseases:
 - 冠心病
 - 外周动脉疾病
 - 缺血性卒中
+
+These are possible clinical associations, not automatic mappings.
+
+Codex should only map to internal diseases if supported by the indication description and internal taxonomy definition.
 
 Codex must:
 
@@ -537,7 +592,8 @@ For every indication after splitting:
 | 主试验药 |
 | 医药魔方适应症 |
 | 原始适应症描述 |
-| Normalized Disease Enity |
+| Normalized Disease Entity |
+| ICD-10 Version |
 | ICD-10 Code |
 | ICD-10 Disease Name |
 | ICD-10 Category |
@@ -580,7 +636,7 @@ Output:
 | Field | Value |
 |--------|--------|
 | ICD-10 Code | E78.1 |
-| ICD-10 Disease | Hypertriglyceridemia |
+| ICD-10 Disease Name | Hypertriglyceridemia |
 | Can Match | Yes |
 | Internal Disease | 高甘油三酯血症 |
 | Status | Fully Mapped |
@@ -608,7 +664,7 @@ Output:
 | Field | Value |
 |--------|--------|
 | ICD-10 Code | I63 |
-| ICD-10 Disease | Ischemic stroke |
+| ICD-10 Disease Name Name | Ischemic stroke |
 | Can Match | No |
 | Internal Disease | Unmapped |
 | Status | Unmapped |
@@ -625,23 +681,24 @@ The indication can be mapped to ischemic stroke in ICD-10, but there is no corre
 
 Input:
 
-```text
-适应症描述：
-
 动脉粥样硬化性心血管疾病；肥胖；超重
-```
 
-Output:
 
-| Split Indication | Match |
-|------------------|--------|
+Because these represent independent disease entities:
+
+Split is required.
+
+
+Result:
+
+| Disease Entity | Match |
+|---|---|
 | 动脉粥样硬化性心血管疾病 | Yes |
 | 肥胖 | No |
 | 超重 | No |
 
 Status:
 
-```text
 Partially Mapped
 ```
 
