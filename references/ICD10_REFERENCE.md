@@ -16,7 +16,7 @@ Standardized disease entity
 
 ↓
 
-China ICD-10 Medical Insurance Disease Classification
+China ICD-10 Medical Insurance Version (医保版 ICD-10)
 
 ↓
 
@@ -37,6 +37,17 @@ All disease mappings should follow the terminology and coding structure of the C
 
 WHO ICD-10, ICD-10-CM, or other international ICD-10 adaptations should not be mixed into the same mapping project unless explicitly required.
 
+---
+
+## Source
+
+The ICD-10 reference should be obtained from the official China medical insurance ICD-10 reference source.
+
+Before each mapping task, record:
+
+- ICD-10 version;
+- Source database;
+- Access date.
 
 ---
 
@@ -171,3 +182,5 @@ If a disease cannot be reliably mapped using China ICD-10 Medical Insurance clas
 - Mark as "Unmapped";
 - Provide the reason;
 - Do not substitute another ICD-10 version.
+- Do not force mapping based only on keyword similarity;
+- Flag the record for manual review when necessary.
